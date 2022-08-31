@@ -1,0 +1,481 @@
+---
+title: "Data Visualization Project"
+author: "Rezaul Karim Mamun, Abdullah All Mamun, Amin Suaad"
+date: "7/21/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+![](bht.png){width=50%}
+
+---
+
+# CHAPTER 1 : Introduction
+
+# CHAPTER 2 : Corelation of variables
+
+# CHAPTER 3 : Location and Room Type
+
+# CHAPTER 4 : Location And Price
+
+# CHAPTER 5 : Popularity of Room based on Price
+
+# CHAPTER 6 : Final Analysis
+
+# CHAPTER 7 : Summary
+
+---
+## Library used in this Project:
+
+ggplot,
+ggplot2,
+psych,
+corrplot,
+magrittr,
+dplyr
+
+
+
+\newpage
+
+
+# CHAPTER 1: Introduction
+# Name of The Dataset: New York City Airbnb Open Data
+
+## INTRODUCTION
+We are a team of three - Rezaul Karim Mamun, Abdullah All Mamun, Amin Suaad. We present here our visualizations, interactive plots and lots of other interesting insights of the Airbnb data. The Data was collected from Kaggle. In this project we present to you the visualizations of New York Airbnb data. 
+
+Airbnb is an American company which operates an online marketplace and hospitality service for people to lease or rent short-term lodging including holiday cottages, apartments, homestays, hostel beds, or hotel rooms, to participate in or facilitate experiences related to tourism such as walking tours, and to make reservations at restaurants. The company does not own any real estate or conduct tours; it is a broker which receives percentage service fees in conjunction with every booking. Like all hospitality services, Airbnb is an example of collaborative consumption and sharing. The company has over 4 million lodging listings in 65,000 cities and 191 countries and has facilitated over 260 million check-ins.
+
+
+## Features of the Dataset:
+
+1. id: The id assigned to each airbnb to identify them uniquely.
+2. name: The name assigned to each airbnb.
+3. host_id: The id assigned to each host to identify them uniquely.
+4. host_name: The name assigned to each host.
+5. neighbourhood_group: The 5 boroughs that New York City is divided into: Manhattan, Queens, Brooklyn, Staten Island and Bronx.
+6. neighbourhood: The neighborhood where the airbnb is located within the boroughs.
+7. latitude: The latitude of the location where the airbnb is situated.
+8. longitude: The longitude of the location where the airbnb is situated.
+9. room_type: The type of airbnb which is divided into two: Entire home/Apartment, Private room and Shared Room.
+10. price: The rent of the airbnb per night.
+11. minimum_nights: The minimum number of nights the airbnb can be rented for.
+12. number_of_reviews: Total number of reviews posted by customers.
+13. last_review: Date of the last review posted by a customer.
+14. reviews_per_month: Monthly total of reviews posted by customers.   
+15. calculated_host_listings_count: Number of total listings by a host.
+16. availability_365: Yearly number of days the airbnb is available for rent.
+
+
+### Now, We will try to to find out some basic findings of the dataset and also some basic graphs
+
+```{r }
+nycData <- read.csv("AB_NYC_2019.csv") ## Loading the data in R
+summary(nycData)  ## statistical summary of the data set
+head(nycData)
+```
+
+## Creating descriptive statistics for each variable
+
+
+```{r pressure}
+library(psych)
+describe(nycData)  ## Description of variables
+```
+
+## Checking for missing values
+
+
+```{r }
+summary(is.na(nycData))  ## checking Null values
+```
+
+### Here, The most important (target) variable is price. We can find out the some graphics of Price
+
+```{r }
+library('ggplot2')
+boxplot(nycData$price, horizontal = TRUE, main="Boxplot for the Price Variable", xlab= "Price")
+plot(nycData$price, main = "Scatter Plot for Price Variable", ylab= "Price")
+```
+
+
+### we can also see the graphs for the latitude and longitude variable
+
+```{r }
+par(mfrow=c(2,1))
+hist(nycData$latitude, freq = FALSE, main= "Histogram and density of latitude")
+lines(density(nycData$latitude), col="blue")
+
+hist(nycData$longitude,  freq = FALSE, main= "Histogram and density of longitude")
+lines(density(nycData$longitude), col="blue")
+par(mfrow=c(1,1))
+```
+
+\newpage
+
+
+
+# CHAPTER 2: Corelation of variables
+In this chapter, we will try to find out the relationship between the variables. There are many numerical variables in our data set. We noticed that in our numerical data set, there are some missing values. If we give a look on *reviews_per_month* variable, there are missing values. Here, it is clear that *reviews_per_month* is missing only when number of reviews variable is 0 (Proof in below R code). So, we can replace the missing values by zero. 
+
+
+After handling the missing values, we can see the relationship among variables by plotting 2 graphs. From the graphs, we can understand the relationship of variables.
+
+## Question: Does price of the houses change linearly with any other factor and is there any linear relationship among the variables?
+
+
+```{r }
+sum(nycData$number_of_reviews == 0)
+# number_of_reviews is zero 10052 times, let's check whether number_of_reviews = 0 and reviews_per_month = NA both are happening together or not.
+sum <- 0
+for (i in 1:48895) {
+  if (nycData$number_of_reviews[i] == 0 && is.na(nycData$reviews_per_month[i])) {
+    sum <- sum + 1
+  }
+}
+print(sum)
+
+# So, both are happening together. Now let's replace.
+
+
+nycData$reviews_per_month[is.na(nycData$reviews_per_month)] <- 0
+
+
+# taking only the numerical variables of the nycData
+
+nycNumerical <- subset(nycData, select = c(id, host_id, latitude, longitude, price, minimum_nights, number_of_reviews, reviews_per_month, calculated_host_listings_count, availability_365))
+
+# correlation matrix
+M <- cor(nycNumerical)
+
+# plotting the correlation matrix
+library(corrplot)
+corrplot(M, method = "color")
+
+# our ques can be also answered by using scatterplot matrix
+
+pairs(nycNumerical, pch = 19)
+
+
+```
+
+
+
+Above, we can see a correlation plot and a scatter plot matrix of the numerical variables of our data set.A Correlation Plot represents the strength of linear relation among the numerical variables. 
+
+We assumed at least some linear relation between the numerical variables initially(At least the price and the popularity of the housing). Here, the number_of_reviews variable is our way to understand the popularity of an Airbnb.
+
+However, we don't see any significant relationship. So, we can say that the price of the housings is not linearly dependent on any other variable of our dataset and there is no significant linear relationship among the numerical variables of our data set. 
+
+
+
+
+\newpage
+
+
+# CHAPTER 3: Location and Room Type
+In our data set, we have 5 locations(cities) in New York. All location do not have same number of room type. In some areas the number of Entire Home is high and on the other hand some areas contain a lot of private rooms. There are some shared rooms also.
+
+
+## Does the geographic location have a significant effect on the type of room?
+If we plot the location and room type, we see that in Manhattan, most of the room type is Entire Home.The percentage of Private rooms are almost same in all areas. But shared rooms are very few in every location.
+
+
+We will also plot a bar diagram to understand better. 
+
+
+```{r }
+
+# Does the geographic location have a significant effect on the type of room?
+
+library(ggplot2)
+
+ggplot(nycData) +
+  aes(x = longitude, y = latitude, color = room_type) +
+  geom_point(shape = 21, alpha = 0.5, size = 3) +
+  scale_color_manual(values = c("#0000FF","#FF0000", "#FFB533"))
+
+# we can observe in a particular location there are more Entire home/apt (Longitude and Latitude range need to be mentioned)
+
+#bar plot can also answer our question
+
+ggplot(nycData, aes(x = room_type, fill = neighbourhood_group)) +
+  geom_bar(position = position_dodge()) +
+  theme_classic()
+
+```
+Above, there are two plots. One is a scatter plot and the other one is a bar diagram. We can see from the scatter plot in a particular range of longitude and latitude (approximately latitude 40.5 to 40.8 and longitude -74.05 to -73.95), Entire home is more dense. However, we can't be completely sure because of the overlapping between the points. So, we will try to visualize by using a bar plot. 
+
+Next, if we consider the above bar diagram we will get a very clear about the in room type in different cities. Most of the entire homes and private room are situated in Manhattan and Brooklyn according to our bar plot. 
+
+
+
+\newpage
+
+
+# CHAPTER 4: Location And Price
+Price is a very important variable in our data set. There might be some places where the price is more than other places and we are very interested in finding that. We will try to find the expensive places and the cheap places depending on the price of the housings.
+
+
+### We can make a question here
+## Question: Does location has an impact on price?
+Yes, location has an impact on price. We have categorized the the price variables in 4 Categories(Extremely High, High, Low and Medium). We used quantile method to find out the ranges. Then, we plotted two graphics for our analysis. 
+
+```{r }
+#ques:  Does location has an impact on price?
+
+quantile(nycData$price)
+
+
+# Categorize the price variable
+for (i in 1:48895) {
+  if (nycData$price[i] <= 69) {
+    nycData$priceCategory[i] <- "Low"
+  } else if (69 < nycData$price[i] & nycData$price[i] <= 106) {
+    nycData$priceCategory[i] <- "Medium"
+  } else if (nycData$price[i] > 106 & nycData$price[i] <= 175) {
+    nycData$priceCategory[i] <- "High"
+  } else {
+    nycData$priceCategory[i] <- "Extremely High"
+  }
+}
+
+
+
+library(ggplot2)
+
+#scatterplot
+ggplot(nycData) +
+  aes(x = longitude, y = latitude, color = priceCategory) +
+  geom_point(shape = 21, alpha = 0.5, size = 3) +
+  scale_color_manual(values = c("#0000FF","#FF0000", "#00FF00", "#FFB533"))
+
+#histogram
+ggplot(nycData, aes(x = price, fill = neighbourhood_group)) +
+  geom_histogram(boundary = 0, breaks = c(0 ,69, 106, 175, 10000))
+
+```
+Upwards, we see two plots. In the scatter plot, we can see that in a particular range(approximately latitude 40.5 to 40.8 and longitude -74.0 to -73.9) of longitude and latitude there are more high price housings. But, again we can't say that with complete confidence because of the overlapping. We will see a histogram for our conclusion. 
+
+So, if we look at the histogram we can see that Manhattan and Brooklyn is the most expensive places than any other cities. 
+
+
+# Histogram & Density with log10 transformation for neighbourhood areas
+### New York City consist of five neighbourhood areas:
+
+1. Manhattan
+2. Brooklyn
+3. Queens
+4. The Bronx
+5. Staten Island.
+
+### It can be useful to vizualise the distribution of price for every neighbourhood area.
+
+```{r }
+library(magrittr) 
+library(dplyr)
+
+airbnb_nh <- nycData %>%
+  group_by(neighbourhood_group) %>%
+  summarise(price = round(mean(price), 2))
+
+
+ggplot(nycData, aes(price)) +
+  geom_histogram(bins = 30, aes(y = ..density..), fill = "purple") + 
+  geom_density(alpha = 0.2, fill = "purple") +
+  ggtitle("Transformed distribution of price\n by neighbourhood groups",
+          subtitle = expression("With" ~'log'[10] ~ "transformation of x-axis")) +
+  geom_vline(data = airbnb_nh, aes(xintercept = price), size = 2, linetype = 3) +
+  geom_text(data = airbnb_nh,y = 1.5, aes(x = price + 1400, label = paste("Mean  = ",price)), color = "darkgreen", size = 4) +
+  facet_wrap(~neighbourhood_group) +
+  scale_x_log10() 
+```
+
+we have 5 neighborhood areas in our data set. For each area the prices are not same that is why we tried to find out the average price for each area. It is clear from the graph that Manhattan is the most expensive area and Brooklyn is the second highest expensive. It is visible from the graph that The Bronx is cheapest area.
+
+
+\newpage
+
+
+
+
+# CHAPTER 5: Popularity of Room
+In this section, we will try to illustrate popularity based on the price of the housings. 
+
+### If we make question like this for our dataset:
+
+## Question: Which type of room is the cheapest and is that more popular among the customers?
+
+We will now try to find the answer from some visualizations. 
+
+
+```{r }
+#Which type of room is the cheapest and is that more popular among the customers?
+library(ggplot2)
+library(gplots)
+
+
+#check which one is the cheapest
+ggplot(nycData, aes(x=room_type, y=price)) + 
+  geom_boxplot()
+
+#mean plot to be extra sure
+plotmeans(price ~ room_type, data = nycData, frame = FALSE,
+          mean.labels = TRUE, connect = FALSE)
+
+#We found that shared room is the cheapest
+#Now let's see is that most popular among the customers of arbnb
+
+ggplot(nycData, aes(x=room_type, y=number_of_reviews)) + 
+  geom_boxplot()
+
+#mean plot to be extra sure
+plotmeans(number_of_reviews ~ room_type, data = nycData, frame = FALSE,
+          mean.labels = TRUE, connect = FALSE)
+
+```
+
+Upwards, we can see 4 graphics. First one is a box plot and from this box plot we can see that shared room is most probably the cheapest one. However to be totally sure about the fact we will have a look at the second graph. The second graph is representing the mean price of each type of housing. Here, we also see that the mean of shared room is less than the other two. Hence, we can say that the shared room is the cheapest.
+
+Now another important question comes in our mind! Is shared room is the most popular one among the customers?
+
+Our remaining plots provide the answer of the question. We assumed that the number of reviews represents the popularity. 
+
+From our third plot we see that, the shared room is most likely not the most popular one. Again, to have a concrete idea we have to go to the mean plot. From the 4th plot, it can seen that the mean number of reviews for the shared room is the minimum. So, it is definitely not the most popular one. 
+
+From the above discussion and plots, we would like to say that the cheapest one is not the most popular one here in our dataset.
+
+
+
+\newpage
+
+
+# Chapter 6: Final Analysis
+In this chapter, we will try to understand a very interesting thing. At this point of our discussion, we can easily say that Manhattan is most likely the most expensive area. 
+
+At this moment, we would like to check if the rent is decreasing as we go far from Manhattan. 
+
+We will calculate the distance between 2 points by using the Haversine Formula. So, we would like to present the Haversine Formual first- 
+
+This uses the ‘haversine’ formula to calculate the great-circle distance between two points – that is, the shortest distance over the earth’s surface – giving an ‘as-the-crow-flies’ distance between the points (ignoring any hills they fly over, of course!).
+
+Haversine
+formula:	a = sin²(Δφ/2) + cos φ1 ⋅ cos φ2 ⋅ sin²(Δλ/2)
+          c = 2 ⋅ atan2( √a, √(1−a) )
+          d = R ⋅ c
+where	φ is latitude, λ is longitude, R is earth’s radius (mean radius = 6,371km);
+note that angles need to be in radians to pass to trig functions!
+
+
+
+```{r }
+nycData$longitudeRadian <- nycData$longitude * (3.1416/180)
+
+nycData$latitudeRadian <- nycData$latitude * (3.1416/180)
+
+
+#Manhattan's longitude and latitude
+
+# 40.78343, -73.96625
+
+manhattanLongitude <- -73.96625*(3.1416/180)
+
+manhattanLatitude <- 40.78343*(3.1416/180)
+
+
+#Haversine formula
+
+for(i in 1:48895){
+  a <- (sin((manhattanLatitude - nycData$latitudeRadian[i])/2))^2 + (cos(manhattanLatitude)* cos(nycData$latitudeRadian[i])*(sin((manhattanLongitude - nycData$longitudeRadian[i])/2))^2)
+  c <- 2 * atan2(sqrt(a), sqrt(1-a))
+  nycData$distanceFromManhattan[i] <- 6371*c
+  
+  
+}
+
+
+# Categorize the distanceFromManhattan variable
+for (i in 1:48895) {
+  if (nycData$distanceFromManhattan[i] <= 4.4676940    ) {
+    nycData$distanceFromManhattanCat[i] <- "0 to 4.46 km"
+  } else if (nycData$distanceFromManhattan[i] > 4.4676940 & nycData$distanceFromManhattan[i] <= 7.6721030 ) {
+    nycData$distanceFromManhattanCat[i] <- "4.46 to 7.67 km"
+  } else if (nycData$distanceFromManhattan[i] > 7.6721030  & nycData$distanceFromManhattan[i] <= 11.1516474 ) {
+    nycData$distanceFromManhattanCat[i] <- "7.67 to 11.15 km"
+  } else {
+    nycData$distanceFromManhattanCat[i] <- "More than 11.15 km"
+  }
+}
+
+
+library(gplots)
+
+plotmeans(price ~ distanceFromManhattanCat, data = nycData, frame = FALSE,
+          mean.labels = TRUE, connect = TRUE)
+
+
+```
+
+
+In the above code, first we calcaculated the distance of each Airbnb from Manhattan. Then we categorized each distance using quantiles. Then, we plotted the mean for each range.
+
+From the Mean Plot we can easily say that the rent of the houses decreases as we go far from Manhattan.
+
+
+
+\newpage
+
+
+
+
+# CHAPTER 7 : Summary
+Through this exploratory visualization project, we gained several interesting insights of the Airbnb rental market. Below we will summarize the answers of the questions that we wished to answer at the beginning of the project:
+
+**Question:** Does price of the houses change linearly with any other factor and is there any linear relationship among the variables?
+
+=> Price doesn't change linearly with any other variables of our dataset and there is no linear relationship among the variables of our dataset. 
+
+**Question:** Does the geographic location have a significant effect on the type of room?
+
+=> Yes. Most of the entire homes and private room are situated in Manhattan and Brooklyn.
+
+**Question:** Does location has an impact on price?
+
+=> Yes. Manhattan and Brooklyn is the most expensive places than any other cities. 
+
+
+**Question:** Which type of room is the cheapest and is that more popular among the customers?
+
+=> Shared room is the cheapest and that is not the most popular one among the customers. 
+
+**Question:** Is the rent of the housing decreases as we go far from Manhattan? 
+
+=> Yes, the rent decreases as we go far from Manhattan.
+
+ 
+## References:
+
+[1].https://www.kaggle.com/dgomonov/new-york-city-airbnb-open-data
+
+[2].https://www.kaggle.com/brittabettendorf/berlin-airbnb-data
+
+[3].https://rpubs.com/Dkanawat/652521
+
+[4].https://ggplot2.tidyverse.org/reference/
+
+[5].https://www.airbnb.com/new-york-ny/stays
